@@ -4,6 +4,7 @@ import br.com.wise.stock_service.application.service.StockService;
 import br.com.wise.stock_service.infrastructure.rest.dto.request.QuantidadeRequest;
 import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,13 +22,14 @@ public class StockController {
 
     @PutMapping("/repor/{produtoId}")
     public ResponseEntity<StockResponse> reporQuantidade(@PathVariable("produtoId") Long produtoId, @RequestBody QuantidadeRequest quantidade) {
-        /*StockRequestMessage dto = new StockRequestMessage();
-        dto.setProdutoId(10L);
-        dto.setQuantidade(quantidade.getQuantidade());
-        gateway.publish(dto);
-        return Response.ok().build();*/
         return ResponseEntity.ok(stockService.reporQuantidade(produtoId, quantidade));
     }
+
+    /*@PutMapping("/repor/teste/{produtoId}")
+    public ResponseEntity<Void> testereporQuantidade(@PathVariable("produtoId") Long produtoId, @RequestBody QuantidadeRequest quantidade) {
+        stockService.reporQuantidadeTeste(produtoId, quantidade);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }*/
 
     @PutMapping("/baixa/{produtoId}")
     public ResponseEntity<StockResponse> baixaQuantidade(@PathVariable("produtoId") Long produtoId, @RequestBody QuantidadeRequest quantidade) {
