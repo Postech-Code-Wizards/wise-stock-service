@@ -9,6 +9,7 @@ import br.com.wise.stock_service.infrastructure.rest.dto.request.QuantidadeReque
 import br.com.wise.stock_service.infrastructure.rest.dto.request.StockRequestMessage;
 import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponse;
 import br.com.wise.stock_service.infrastructure.rest.exception.ResourceNotFoundException;
+import br.com.wise.stock_service.infrastructure.rest.exception.StockNegativeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -53,7 +54,10 @@ public class StockService {
     public StockResponse baixaQuantidade(Long produtoId, QuantidadeRequest quantidadeRequest) {
         return buscaEstoquePorIdProdutoUseCase.execute(produtoId)
                 .map(existing -> {
-                    Integer novaQuantidade = existing.getQuantidade() - quantidadeRequest.getQuantidade();
+                    int novaQuantidade = existing.getQuantidade() - quantidadeRequest.getQuantidade();
+
+                    if (novaQuantidade < 0) throw new StockNegativeException("");
+
                     var atualizado = stockConverter.toDomain(existing, novaQuantidade);
                     var salvo = salvarStockUseCase.execute(atualizado);
                     return stockConverter.toResponse(salvo);
