@@ -2,11 +2,15 @@ package br.com.wise.stock_service.infrastructure.rest;
 
 import br.com.wise.stock_service.application.service.StockService;
 import br.com.wise.stock_service.infrastructure.rest.dto.request.QuantidadeRequest;
+import br.com.wise.stock_service.infrastructure.rest.dto.request.StockRequestMessage;
 import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponse;
+import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponseMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/estoque")
@@ -25,9 +29,9 @@ public class StockController {
         return ResponseEntity.ok(stockService.reporQuantidade(produtoId, quantidade));
     }
 
-    /*@PutMapping("/repor/teste/{produtoId}")
-    public ResponseEntity<Void> testereporQuantidade(@PathVariable("produtoId") Long produtoId, @RequestBody QuantidadeRequest quantidade) {
-        stockService.reporQuantidadeTeste(produtoId, quantidade);
+/*    @PostMapping("/teste")
+    public ResponseEntity<Void> testereporQuantidade(@RequestBody List<StockRequestMessage> message) {
+        stockService.reporQuantidadeTeste(message);
         return ResponseEntity.status(HttpStatus.OK).build();
     }*/
 

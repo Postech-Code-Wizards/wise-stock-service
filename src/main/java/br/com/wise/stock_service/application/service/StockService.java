@@ -1,6 +1,7 @@
 package br.com.wise.stock_service.application.service;
 
 import br.com.wise.stock_service.application.usecase.BuscaEstoquePorIdProdutoUseCase;
+import br.com.wise.stock_service.application.usecase.EnviaRespostaRabbitUseCase;
 import br.com.wise.stock_service.application.usecase.SalvarStockUseCase;
 import br.com.wise.stock_service.converter.StockConverter;
 import br.com.wise.stock_service.domain.Stock;
@@ -8,6 +9,7 @@ import br.com.wise.stock_service.infrastructure.configuration.RabbitMQConfig;
 import br.com.wise.stock_service.infrastructure.rest.dto.request.QuantidadeRequest;
 import br.com.wise.stock_service.infrastructure.rest.dto.request.StockRequestMessage;
 import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponse;
+import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponseMessage;
 import br.com.wise.stock_service.infrastructure.rest.exception.ResourceNotFoundException;
 import br.com.wise.stock_service.infrastructure.rest.exception.StockNegativeException;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +18,8 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 
 @Slf4j
 @Service
@@ -27,6 +29,7 @@ public class StockService {
     private final StockConverter stockConverter;
     private final BuscaEstoquePorIdProdutoUseCase buscaEstoquePorIdProdutoUseCase;
     private final SalvarStockUseCase salvarStockUseCase;
+    private final EnviaRespostaRabbitUseCase enviaRespostaRabbitUseCase;
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -65,34 +68,46 @@ public class StockService {
     }
 
     @RabbitListener(queues = RabbitMQConfig.STOCK_BAIXA_QUEUE)
-    public void baixaQuantidadeRabbit(StockRequestMessage message) {
-        processarMensagem(message, this::baixaQuantidade);
+    public void baixaQuantidadeRabbit(List<StockRequestMessage> messages) {
+        if (messages == null || messages.isEmpty()) return;
+
+        Long pedidoId = messages.getFirst().getPedidoId();
+
+        boolean negativo = messages.stream().anyMatch(msg -> {
+            var optEstoque = buscaEstoquePorIdProdutoUseCase.execute(msg.getProdutoId());
+            if (optEstoque.isEmpty()) return true;
+
+            int atual = optEstoque.get().getQuantidade();
+            return (atual - msg.getQuantidade()) < 0;
+        });
+
+        if (negativo) {
+            enviaRespostaRabbitUseCase.enviar(new StockResponseMessage(pedidoId, false));
+            return;
+        }
+
+        for (StockRequestMessage msg : messages) {
+            try {
+                baixaQuantidade(msg.getProdutoId(), new QuantidadeRequest(msg.getQuantidade()));
+            } catch (Exception ex) {
+                log.error("Erro ao baixar estoque para produtoId {}: {}", msg.getProdutoId(), ex.getMessage());
+                enviaRespostaRabbitUseCase.enviar(new StockResponseMessage(pedidoId, false));
+                return;
+            }
+        }
+
+        enviaRespostaRabbitUseCase.enviar(new StockResponseMessage(pedidoId, true));
     }
 
     @RabbitListener(queues = RabbitMQConfig.STOCK_REPOR_QUEUE)
-    public void reporQuantidadeRabbit(StockRequestMessage message) {
-        processarMensagem(message, this::reporQuantidade);
-    }
-
-    private void processarMensagem(StockRequestMessage message, BiConsumer<Long, QuantidadeRequest> operacao) {
-        try {
-            QuantidadeRequest qtdRequest = new QuantidadeRequest(message.getQuantidade());
-            operacao.accept(message.getProdutoId(), qtdRequest);
-        } catch (ResourceNotFoundException ex) {
-            log.warn("Produto não encontrado: {}", ex.getMessage());
-        } catch (Exception ex) {
-            log.error("Erro inesperado ao processar mensagem RabbitMQ", ex);
+    public void reporQuantidadeRabbit(List<StockRequestMessage> messages) {
+        for (StockRequestMessage msg : messages) {
+            reporQuantidade(msg.getProdutoId(), new QuantidadeRequest(msg.getQuantidade()));
         }
+
     }
 
-
-
-    /*public void reporQuantidadeTeste(Long produtoId, QuantidadeRequest quantidade) {
-        StockRequestMessage stockRequestMessage = new StockRequestMessage();
-        stockRequestMessage.setProdutoId(produtoId);
-        stockRequestMessage.setQuantidade(quantidade.getQuantidade());
-
-        rabbitTemplate.convertAndSend(RabbitMQConfig.STOCK_REPOR_QUEUE, stockRequestMessage);
+/*    public void reporQuantidadeTeste(List<StockRequestMessage> message) {
+        rabbitTemplate.convertAndSend(RabbitMQConfig.STOCK_REPOR_QUEUE, message);
     }*/
-
 }
