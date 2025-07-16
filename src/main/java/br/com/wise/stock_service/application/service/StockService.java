@@ -13,15 +13,12 @@ import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponseM
 import br.com.wise.stock_service.infrastructure.rest.exception.ResourceNotFoundException;
 import br.com.wise.stock_service.infrastructure.rest.exception.StockNegativeException;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class StockService {
@@ -30,8 +27,6 @@ public class StockService {
     private final BuscaEstoquePorIdProdutoUseCase buscaEstoquePorIdProdutoUseCase;
     private final SalvarStockUseCase salvarStockUseCase;
     private final EnviaRespostaRabbitUseCase enviaRespostaRabbitUseCase;
-
-    private final RabbitTemplate rabbitTemplate;
 
     public StockResponse verificaQuantidade(Long produtoId) {
         Optional<Stock> stock = Optional.ofNullable(buscaEstoquePorIdProdutoUseCase.execute(produtoId)
@@ -90,7 +85,6 @@ public class StockService {
             try {
                 baixaQuantidade(msg.getProdutoId(), new QuantidadeRequest(msg.getQuantidade()));
             } catch (Exception ex) {
-                log.error("Erro ao baixar estoque para produtoId {}: {}", msg.getProdutoId(), ex.getMessage());
                 enviaRespostaRabbitUseCase.enviar(new StockResponseMessage(pedidoId, false));
                 return;
             }
@@ -107,7 +101,4 @@ public class StockService {
 
     }
 
-/*    public void reporQuantidadeTeste(List<StockRequestMessage> message) {
-        rabbitTemplate.convertAndSend(RabbitMQConfig.STOCK_REPOR_QUEUE, message);
-    }*/
 }
