@@ -46,6 +46,6 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8080:8080"
+      - "8088:8080"
     networks:
       - wise_network
