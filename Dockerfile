@@ -13,4 +13,4 @@ WORKDIR /app
 
 COPY --from=build /app/target/*-SNAPSHOT.jar /app/app.jar
 
-ENTRYPOINT ["sh", "-c", "sleep 10 && java -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "sleep 10 && java -jar /app/app.jar", "--spring.profiles.active=docker"]
