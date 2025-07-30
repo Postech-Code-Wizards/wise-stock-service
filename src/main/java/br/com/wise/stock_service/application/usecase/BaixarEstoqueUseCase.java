@@ -1,6 +1,5 @@
-package br.com.wise.stock_service.application.usecase.processor;
+package br.com.wise.stock_service.application.usecase;
 
-import br.com.wise.stock_service.application.usecase.BaixarEstoqueUseCase;
 import br.com.wise.stock_service.domain.Stock;
 import br.com.wise.stock_service.gateway.database.StockGateway;
 import br.com.wise.stock_service.infrastructure.rest.exception.ResourceNotFoundException;
@@ -11,18 +10,17 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class BaixarEstoqueIndividualUseCase implements BaixarEstoqueUseCase {
+public class BaixarEstoqueUseCase {
 
-    private final BuscaEstoquePorIdProdutoUseCase buscaEstoquePorIdProdutoUseCase;
     private final StockGateway stockGateway;
 
     public Stock execute(Stock stockBaixa) {
 
-        var existingStockOp = buscaEstoquePorIdProdutoUseCase.execute(stockBaixa.getProduto().getId());
+        var existingStockOp = stockGateway.buscaStockPorIdProduto(stockBaixa.getProduto().getProdutoId());
 
         if (existingStockOp.isEmpty()) {
-            log.error("Não foi encontrado estoque para o produto {}", stockBaixa.getProduto().getId());
-            throw new ResourceNotFoundException("Produto com ID " + stockBaixa.getProduto().getId());
+            log.error("Não foi encontrado estoque para o produto {}", stockBaixa.getProduto().getProdutoId());
+            throw new ResourceNotFoundException("Produto com ID " + stockBaixa.getProduto().getProdutoId());
         }
 
         var stockExistente = existingStockOp.get();
@@ -31,8 +29,4 @@ public class BaixarEstoqueIndividualUseCase implements BaixarEstoqueUseCase {
         return stockGateway.salvar(stockExistente);
     }
 
-    @Override
-    public Stock baixarEstoque(Stock stockBaixa) {
-        return null;
-    }
 }

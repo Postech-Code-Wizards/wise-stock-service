@@ -1,4 +1,4 @@
-package br.com.wise.stock_service.application.usecase.processor;
+package br.com.wise.stock_service.application.usecase;
 
 import br.com.wise.stock_service.domain.Product;
 import br.com.wise.stock_service.domain.Stock;
@@ -13,10 +13,9 @@ import org.springframework.stereotype.Service;
 public class ReporEstoqueUseCase {
 
     private final StockGateway stockGateway;
-    private final BuscaEstoquePorIdProdutoUseCase buscaEstoquePorIdProdutoUseCase;
 
     public Stock execute(Stock stock) {
-        var existingStockOp = buscaEstoquePorIdProdutoUseCase.execute(stock.getProduto().getProdutoId());
+        var existingStockOp = stockGateway.buscaStockPorIdProduto(stock.getProduto().getProdutoId());
 
         if (existingStockOp.isPresent()) {
             var stockExistente = existingStockOp.get();
