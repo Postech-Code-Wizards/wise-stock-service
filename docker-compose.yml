@@ -18,7 +18,7 @@ services:
       - POSTGRES_PASSWORD=1234
       - TZ=America/Sao_Paulo
     ports:
-      - "5432:5432"
+      - "5435:5432"
     networks:
       - wise_network
     volumes:
@@ -36,6 +36,6 @@ services:
     depends_on:
       - postgres
     ports:
-      - "8080:8080"
+      - "8088:8080"
     networks:
       - wise_network

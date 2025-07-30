@@ -1,4 +1,4 @@
-package br.com.wise.stock_service.application.usecase;
+package br.com.wise.stock_service.application.usecase.processor;
 
 import br.com.wise.stock_service.domain.Stock;
 import br.com.wise.stock_service.gateway.database.StockGateway;
