@@ -1,6 +1,5 @@
-package br.com.wise.stock_service.application.usecase.processor;
+package br.com.wise.stock_service.application.usecase;
 
-import br.com.wise.stock_service.application.usecase.BaixarEstoqueUseCase;
 import br.com.wise.stock_service.domain.Stock;
 import br.com.wise.stock_service.gateway.database.StockGateway;
 import br.com.wise.stock_service.gateway.queue.QueueGateway;
@@ -16,10 +15,9 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class BaixarEstoqueEmLoteUseCase extends BaixarEstoqueUseCase {
+public class BaixarEstoqueEmLoteUseCase {
 
     private final StockGateway stockGateway;
-    private final BuscaEstoquePorIdProdutoUseCase buscaEstoquePorIdProdutoUseCase;
     private final QueueGateway queueGateway;
 
     @Transactional
@@ -31,7 +29,7 @@ public class BaixarEstoqueEmLoteUseCase extends BaixarEstoqueUseCase {
         try {
 
             for (StockItens item : stockItens) {
-                Optional<Stock> optEstoque = buscaEstoquePorIdProdutoUseCase.execute(item.getProdutoId());
+                Optional<Stock> optEstoque = stockGateway.buscaStockPorIdProduto(item.getProdutoId());
                 Stock stockExistente = optEstoque.get();
 
                 stockExistente.baixarQuantidade(item.getQuantidade());
@@ -50,8 +48,4 @@ public class BaixarEstoqueEmLoteUseCase extends BaixarEstoqueUseCase {
 
     }
 
-    @Override
-    public void baixarEstoqueEmLote(List<StockItens> items) {
-
-    }
 }

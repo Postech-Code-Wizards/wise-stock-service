@@ -5,13 +5,12 @@ import br.com.wise.stock_service.domain.Stock;
 import br.com.wise.stock_service.gateway.database.StockGateway;
 import br.com.wise.stock_service.gateway.database.jpa.entity.StockEntity;
 import br.com.wise.stock_service.gateway.database.jpa.repository.StockRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class StockJpaGateway implements StockGateway {
@@ -21,10 +20,11 @@ public class StockJpaGateway implements StockGateway {
 
     @Override
     public Optional<Stock> buscaStockPorIdProduto(Long produtoId) {
-        Optional<StockEntity> stockEntity = stockRepository.findByProdutoId(produtoId);
+        Optional<StockEntity> stockEntity = stockRepository.findByProduto_Id(produtoId);
         return stockConverter.toDomain(stockEntity);
     }
 
+    @Transactional
     @Override
     public Stock salvar(Stock stock) {
         StockEntity stockEntity = stockConverter.toEntity(stock);

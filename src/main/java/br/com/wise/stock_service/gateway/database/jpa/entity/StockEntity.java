@@ -18,8 +18,9 @@ public class StockEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "produto_id",  nullable = false)
-    private Long produtoId;
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "produto_id",  nullable = false)
+    private ProductEntity produto;
 
     @Column(name = "quantidade",  nullable = false)
     private Integer quantidade;
