@@ -95,7 +95,7 @@ class StockConverterTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(50L);
-        assertThat(response.getProdutoId()).isEqualTo(5L);
+        assertThat(response.getProdutoId()).isEqualTo(500L);
         assertThat(response.getQuantidade()).isEqualTo(35);
         assertThat(response.getAtualizado()).isEqualTo(now);
         assertThat(response.getCriado()).isEqualTo(now);

@@ -40,13 +40,13 @@ public class StockConverter {
     }
 
     public StockResponse toResponse(Stock stock) {
-        return StockResponse.builder()
-                .id(stock.getId())
-                .produtoId(stock.getProduto().getId())
-                .quantidade(stock.getQuantidade())
-                .atualizado(stock.getAtualizado())
-                .criado(stock.getCriado())
-                .build();
+        return new StockResponse(
+                stock.getId(),
+                stock.getProduto().getProdutoId(),
+                stock.getQuantidade(),
+                stock.getAtualizado(),
+                stock.getCriado()
+        );
     }
 
     public Stock toDomain(Long produtoId, Integer quantidade) {
