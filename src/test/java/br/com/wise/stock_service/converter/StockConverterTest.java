@@ -1,124 +1,118 @@
 package br.com.wise.stock_service.converter;
 
+import br.com.wise.stock_service.domain.Product;
 import br.com.wise.stock_service.domain.Stock;
+import br.com.wise.stock_service.gateway.database.jpa.entity.ProductEntity;
 import br.com.wise.stock_service.gateway.database.jpa.entity.StockEntity;
-import br.com.wise.stock_service.infrastructure.rest.dto.request.QuantidadeRequest;
 import br.com.wise.stock_service.infrastructure.rest.dto.response.StockResponse;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class StockConverterTest {
 
-    private StockConverter converter;
+    private StockConverter stockConverter;
+
+    @Mock
+    private ProductConverter productConverter;
 
     @BeforeEach
     void setUp() {
-        converter = new StockConverter();
+        MockitoAnnotations.openMocks(this);
+        stockConverter = new StockConverter(productConverter);
     }
 
     @Test
-    void shouldConvertStockEntityToDomain() {
-        StockEntity entity = Instancio.create(StockEntity.class);
+    void shouldConvertEntityToDomain() {
+        ProductEntity productEntity = new ProductEntity(1L, 100L);
+        StockEntity stockEntity = new StockEntity(10L, productEntity, 20, ZonedDateTime.now(), ZonedDateTime.now());
+        Product productDomain = new Product(1L, 100L);
 
-        Stock domain = converter.toDomain(entity);
+        when(productConverter.toDomain(productEntity)).thenReturn(productDomain);
 
-        assertThat(domain).isNotNull();
-        assertThat(domain.getId()).isEqualTo(entity.getId());
-        assertThat(domain.getProdutoId()).isEqualTo(entity.getProdutoId());
-        assertThat(domain.getQuantidade()).isEqualTo(entity.getQuantidade());
-        assertThat(domain.getAtualizado()).isEqualTo(entity.getAtualizado());
-        assertThat(domain.getCriado()).isEqualTo(entity.getCriado());
+        Stock stock = stockConverter.toDomain(stockEntity);
+
+        assertThat(stock).isNotNull();
+        assertThat(stock.getId()).isEqualTo(10L);
+        assertThat(stock.getProduto()).isEqualTo(productDomain);
+        assertThat(stock.getQuantidade()).isEqualTo(20);
+
+        verify(productConverter).toDomain(productEntity);
     }
 
     @Test
-    void shouldConvertProdutoIdAndQuantidadeRequestToDomain() {
-        Long produtoId = 123L;
-        QuantidadeRequest request = new QuantidadeRequest(5);
+    void shouldConvertOptionalEntityToOptionalDomain() {
+        ProductEntity productEntity = new ProductEntity(2L, 200L);
+        StockEntity stockEntity = new StockEntity(20L, productEntity, 15, ZonedDateTime.now(), ZonedDateTime.now());
+        Product productDomain = new Product(2L, 200L);
 
-        Stock result = converter.toDomain(produtoId, request);
+        when(productConverter.toDomain(productEntity)).thenReturn(productDomain);
 
-        assertThat(result).isNotNull();
-        assertThat(result.getId()).isNull();
-        assertThat(result.getProdutoId()).isEqualTo(produtoId);
-        assertThat(result.getQuantidade()).isEqualTo(request.getQuantidade());
-        assertThat(result.getAtualizado()).isNotNull();
-        assertThat(result.getCriado()).isNotNull();
+        Optional<Stock> optionalStock = stockConverter.toDomain(Optional.of(stockEntity));
+        Optional<Stock> emptyOptional = stockConverter.toDomain(Optional.empty());
+
+        assertThat(optionalStock).isPresent();
+        assertThat(optionalStock.get().getId()).isEqualTo(20L);
+        assertThat(optionalStock.get().getProduto()).isEqualTo(productDomain);
+        assertThat(emptyOptional).isEmpty();
+
+        verify(productConverter).toDomain(productEntity);
     }
 
     @Test
-    void shouldConvertExistingStockAndNovaQuantidadeToDomain() {
-        Stock existing = Instancio.create(Stock.class);
-        int novaQuantidade = 42;
+    void shouldConvertDomainToEntity() {
+        Product productDomain = new Product(3L, 300L);
+        Stock stockDomain = new Stock(30L, productDomain, 25, ZonedDateTime.now(), ZonedDateTime.now());
+        ProductEntity productEntity = new ProductEntity(3L, 300L);
 
-        Stock updated = converter.toDomain(existing, novaQuantidade);
+        when(productConverter.toEntity(productDomain)).thenReturn(productEntity);
 
-        assertThat(updated).isNotNull();
-        assertThat(updated.getId()).isEqualTo(existing.getId());
-        assertThat(updated.getProdutoId()).isEqualTo(existing.getProdutoId());
-        assertThat(updated.getQuantidade()).isEqualTo(novaQuantidade);
-        assertThat(updated.getAtualizado()).isNotNull();
-        assertThat(updated.getCriado()).isEqualTo(existing.getCriado());
+        StockEntity stockEntity = stockConverter.toEntity(stockDomain);
+
+        assertThat(stockEntity).isNotNull();
+        assertThat(stockEntity.getId()).isEqualTo(30L);
+        assertThat(stockEntity.getProduto()).isEqualTo(productEntity);
+        assertThat(stockEntity.getQuantidade()).isEqualTo(25);
+
+        verify(productConverter).toEntity(productDomain);
     }
 
     @Test
-    void shouldConvertOptionalStockEntityToOptionalDomain() {
-        StockEntity entity = Instancio.create(StockEntity.class);
+    void shouldConvertDomainToResponse() {
+        ZonedDateTime now = ZonedDateTime.now();
+        Product product = new Product(5L, 500L);
+        Stock stock = new Stock(50L, product, 35, now, now);
 
-        Optional<Stock> result = converter.toDomain(Optional.of(entity));
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getProdutoId()).isEqualTo(entity.getProdutoId());
-    }
-
-    @Test
-    void shouldConvertStockToEntity() {
-        Stock stock = Instancio.create(Stock.class);
-
-        StockEntity entity = converter.toEntity(stock);
-
-        assertThat(entity).isNotNull();
-        assertThat(entity.getId()).isEqualTo(stock.getId());
-        assertThat(entity.getProdutoId()).isEqualTo(stock.getProdutoId());
-        assertThat(entity.getQuantidade()).isEqualTo(stock.getQuantidade());
-        assertThat(entity.getAtualizado()).isEqualTo(stock.getAtualizado());
-        assertThat(entity.getCriado()).isEqualTo(stock.getCriado());
-    }
-
-    @Test
-    void shouldConvertOptionalStockToResponse() {
-        Stock stock = Instancio.create(Stock.class);
-
-        StockResponse response = converter.toResponse(Optional.of(stock));
+        StockResponse response = stockConverter.toResponse(stock);
 
         assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(stock.getId());
-        assertThat(response.getProdutoId()).isEqualTo(stock.getProdutoId());
-        assertThat(response.getQuantidade()).isEqualTo(stock.getQuantidade());
+        assertThat(response.getId()).isEqualTo(50L);
+        assertThat(response.getProdutoId()).isEqualTo(500L);
+        assertThat(response.getQuantidade()).isEqualTo(35);
+        assertThat(response.getAtualizado()).isEqualTo(now);
+        assertThat(response.getCriado()).isEqualTo(now);
     }
 
     @Test
-    void shouldReturnNullWhenOptionalStockIsEmpty() {
-        StockResponse response = converter.toResponse(Optional.empty());
+    void shouldCreateDomainFromProdutoIdAndQuantidade() {
+        Long produtoId = 7L;
+        Integer quantidade = 40;
 
-        assertThat(response).isNull();
-    }
+        Stock stock = stockConverter.toDomain(produtoId, quantidade);
 
-    @Test
-    void shouldConvertStockToResponse() {
-        Stock stock = Instancio.create(Stock.class);
-
-        StockResponse response = converter.toResponse(stock);
-
-        assertThat(response).isNotNull();
-        assertThat(response.getId()).isEqualTo(stock.getId());
-        assertThat(response.getProdutoId()).isEqualTo(stock.getProdutoId());
-        assertThat(response.getQuantidade()).isEqualTo(stock.getQuantidade());
-        assertThat(response.getAtualizado()).isEqualTo(stock.getAtualizado());
-        assertThat(response.getCriado()).isEqualTo(stock.getCriado());
+        assertThat(stock).isNotNull();
+        assertThat(stock.getId()).isNull();
+        assertThat(stock.getProduto().getProdutoId()).isEqualTo(produtoId);
+        assertThat(stock.getQuantidade()).isEqualTo(quantidade);
+        assertThat(stock.getAtualizado()).isNull();
+        assertThat(stock.getCriado()).isNull();
     }
 }
